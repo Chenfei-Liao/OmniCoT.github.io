@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniCoT: A Benchmark for Global and Multi-Step Panoramic Reasoning</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap">
+  <style>
+    :root {
+      --bg: hsl(36, 28%, 94%); /* 极浅的暖黄背景 */
+      --surface: #ffffff;
+      --text: #3d2f25; /* 暖深棕黑 */
+      --text-secondary: #736155; /* 暖灰棕 */
+      --text-tertiary: #a89587; /* 浅暖灰 */
+      --accent: #d96c5b; /* 柔和砖红/淡红 */
+      --accent-hover: #b85244;
+      --border: #f0e6d8; /* 暖色边框 */
+      --highlight-bg: #fff4ea; /* 淡暖黄高亮背景 */
+      --max-w: 1100px;
+      --transition: .2s ease-in-out;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Source Serif 4', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, .nav-link, .btn, .tag, table { font-family: 'Inter', sans-serif; }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: all var(--transition);
+      border-bottom: 1px solid transparent;
+    }
+    a:hover { border-bottom-color: var(--accent); color: var(--accent-hover); }
+
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 80px 0 50px;
+      text-align: center;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 20px;
+      line-height: 1.2;
+      color: var(--text);
+    }
+    .authors {
+      font-size: 1.15rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+    .affiliations {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      margin-bottom: 35px;
+      font-style: italic;
+    }
+    .links {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 12px 24px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      border: none;
+      border-radius: 4px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 6px rgba(217, 108, 91, 0.2);
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(217, 108, 91, 0.3); color: #fff; }
+
+    /* ── Sections ── */
+    section { padding: 60px 0; }
+    section:nth-child(even) { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 40px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .section-title::after { content: ""; height: 1px; flex: 1; background: var(--border); }
+
+    .abstract-text {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      text-align: justify;
+      max-width: 900px;
+      margin: 0 auto;
+      line-height: 1.8;
+    }
+
+    .teaser-img {
+      width: 100%;
+      height: auto;
+      margin: 30px auto;
+      border: 1px solid var(--border);
+      background: #fff;
+      display: block;
+      border-radius: 6px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    }
+    .caption {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-top: 10px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Content Blocks ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 30px;
+      margin-top: 40px;
+    }
+    .card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+    .card p { color: var(--text-secondary); font-size: 1rem; }
+
+    .highlight-box {
+      background: var(--highlight-bg);
+      padding: 30px 40px;
+      border-left: 4px solid var(--accent);
+      margin: 40px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .highlight-box strong { font-family: 'Inter', sans-serif; color: var(--accent); font-weight: 600; font-size: 1rem; }
+
+    /* ── Leaderboard Table ── */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 30px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+      background: #fff;
+    }
+    th, td { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    th { background: #faf5f0; font-weight: 700; color: var(--text); }
+    tr:hover { background: #fffbf5; }
+    .best { font-weight: 700; color: #16a34a; }
+    .worst { color: #dc2626; }
+
+    /* ── Taxonomy Examples ── */
+    .taxonomy { margin-top: 40px; }
+    .tax-item { margin-bottom: 30px; }
+    .tax-item h4 { font-family: 'Inter', sans-serif; font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+    .tax-item h4 span { color: var(--text-secondary); font-weight: 400; font-size: 0.95rem; margin-left: 8px; }
+    .example-box {
+      background: #fff;
+      border: 1px solid var(--border);
+      padding: 15px 20px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      background-color: #faf8f5;
+    }
+
+    /* ── BibTeX ── */
+    pre {
+      background: #3d2f25;
+      color: #f0e6d8;
+      padding: 30px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      font-family: 'Courier New', Courier, monospace;
+      margin-top: 30px;
+    }
+
+    footer {
+      padding: 60px 0;
+      text-align: left;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2.2rem; }
+      section { padding: 50px 0; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>OmniCoT: A Benchmark for Global and Multi-Step Panoramic Reasoning</h1>
+    <div class="authors">
+      Haocong He<sup>1,*</sup>, Chenfei Liao<sup>2,*,&dagger;</sup>, Zichen Wen<sup>1,7</sup>, Zihao Dongfang<sup>2</sup>, Xu Zheng<sup>2</sup>, Bin Ren<sup>3</sup>, Chang Su<sup>4</sup>, Zixin Zhang<sup>2</sup>, Harold Haodong Chen<sup>2</sup>, Hongfei Zhang<sup>2</sup>, Weijia Li<sup>5</sup>, Kailun Yang<sup>6</sup>, Conghui He<sup>7</sup>, Xuming Hu<sup>2</sup>, Nicu Sebe<sup>8</sup>, Linfeng Zhang<sup>1,&Dagger;</sup>
+    </div>
+    <div class="affiliations">
+      <sup>1</sup>SJTU, <sup>2</sup>HKUST(GZ), <sup>3</sup>MBZUAI, <sup>4</sup>JLU, <sup>5</sup>THU, <sup>6</sup>HNU, <sup>7</sup>Shanghai AI Lab, <sup>8</sup>UniTrento<br>
+      <sup>*</sup>equal contributions, <sup>&dagger;</sup>project lead, <sup>&Dagger;</sup>corresponding author
+    </div>
+    <div class="links">
+      <a href="#" class="btn">Paper (ArXiv)</a>
+      <a href="https://github.com/Chenfei-Liao/OmniCoT" target="_blank" class="btn">Code (GitHub)</a>
+      <a href="https://huggingface.co/datasets/Eustia1/OmniCoT" target="_blank" class="btn">Dataset (HF)</a>
+      <a href="https://huggingface.co/Eustia1/OmniCoT-R1" target="_blank" class="btn">Model (HF)</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Abstract -->
+  <section class="container">
+    <div class="section-title">Abstract</div>
+    <div class="abstract-text">
+      Multimodal Large Language Models (MLLMs) have demonstrated promising spatial reasoning capabilities, while these abilities remain underexplored in the emerging visual modality of panoramic imagery. The full 360° × 180° field of view of panoramas essentially supports complex global multi-step reasoning, which is also the fundamental advantage of panoramas in applications such as embodied intelligence. However, existing panoramic benchmarks largely focus on simplistic queries that rely on local cues or single-/few-step reasoning, thereby ignoring the fundamental advantage of panoramas and failing to fully exploit their potential. To address this gap, we introduce <strong>OmniCoT</strong>, a panoramic spatial reasoning suite designed to enable MLLMs to use global evidence and perform multi-step inference across viewpoints. It includes <strong>OmniCoT-B</strong> for evaluation, which measures both answer accuracy and reasoning quality, <strong>OmniCoT-Real</strong> as a manually annotated real-world subset to quantify the Sim-to-Real gap, and <strong>OmniCoT-T</strong> for training with structured stepwise Chain-of-Thought annotations.
+    </div>
+    
+    <div style="margin-top: 40px;">
+      <img src="assets/img/Teaser.png" alt="OmniCoT Teaser" class="teaser-img">
+      <p class="caption">Figure 1: Comparison with existing panoramic benchmarks. While prior works rely on synthetic data and local cues, OmniCoT demands comprehensive multi-hop inference across the full 360° view and uniquely incorporates a manually annotated real-world subset.</p>
+    </div>
+  </section>
+
+  <!-- Core Contributions -->
+  <section>
+    <div class="container">
+      <div class="section-title">Core Contributions</div>
+      <div class="grid" style="margin-bottom: 40px;">
+        <div class="card">
+          <h3>OmniCoT-B Benchmark</h3>
+          <p>A new benchmark with 6.7K data points that challenges MLLMs to fully use the 360° space, requiring multi-hop reasoning rather than simple local cues.</p>
+        </div>
+        <div class="card">
+          <h3>OmniCoT-T Training Set</h3>
+          <p>A purpose-built training set with 14.3K structured stepwise Chain-of-Thought annotations linking intermediate steps to panoramic evidence.</p>
+        </div>
+        <div class="card">
+          <h3>OmniCoT-R1 Model</h3>
+          <p>A baseline model developed via a two-stage strategy: SFT for structured reasoning and GRPO to enhance complex multi-step spatial consistency.</p>
+        </div>
+        <div class="card">
+          <h3>OmniCoT-Real</h3>
+          <p>A manually annotated real-world subset of 1K panoramas to quantify the Sim-to-Real gap in current panoramic reasoning models.</p>
+        </div>
+      </div>
+      <div style="max-width: 1000px; margin: 0 auto; text-align: center; padding-top: 40px; border-top: 1px solid var(--border);">
+        <h3 style="margin-bottom:20px; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);">Dataset Statistics</h3>
+        <p class="caption" style="margin-bottom: 30px;">OmniCoT exhibits broad lexical coverage and balanced question-type composition across the <em>See-Locate-Move</em> taxonomy.</p>
+        <img src="assets/img/Stat.png" alt="Data Statistics" class="teaser-img" style="margin-top: 0;">
+      </div>
+    </div>
+  </section>
+
+  <!-- Taxonomy -->
+  <section class="container">
+    <div class="section-title">"See-Locate-Move" Taxonomy</div>
+    <div class="highlight-box">
+      <strong>The core philosophy of OmniCoT:</strong> We decompose panoramic spatial reasoning into three progressive dimensions, enabling systematic generation of multi-hop questions spanning viewpoint transformation and inter-object relational reasoning.
+    </div>
+    
+    <div class="taxonomy">
+      <div class="tax-item">
+        <h4>[SEE] <span>Multi-hop Viewpoint Transformation</span></h4>
+        <p style="margin-bottom:15px; color:var(--text-secondary);">Tests the MLLMs' ability to decouple their view from the camera's pose and mentally synthesize views from arbitrary angles. It includes <strong>Multi-Step Orientation Tracking (MOT)</strong> and <strong>Relative Angular Calculation (RAC)</strong>.</p>
+        <div class="example-box" style="margin-bottom: 10px;">
+          <strong>Type A1 (MOT):</strong> Standing at the [object_desc], facing [cardinal direction], turn [angle1]&deg; [dir1], then turn [angle2]&deg; [dir2], what is the NEAREST object?
+        </div>
+        <div class="example-box">
+          <strong>Type A2 (RAC):</strong> Standing at [object_desc], initially facing [object_desc], turn to face [object_desc], then turn to face [object_desc]. What is the TOTAL cumulative angle turned?
+        </div>
+      </div>
+      <div class="tax-item">
+        <h4>[LOCATE] <span>Inter-Object Spatial Relationship</span></h4>
+        <p style="margin-bottom:15px; color:var(--text-secondary);">Evaluates reasoning about inter-object spatial layouts as a structured layout of interconnected entities. It involves <strong>Multi-Hop Object Identification (MOI)</strong> and <strong>Multi-Hop Direction Identification (MDI)</strong>.</p>
+        <div class="example-box" style="margin-bottom: 10px;">
+          <strong>Type B1 (MOI):</strong> What [object_desc] is directly to the [cardinal direction] of the NEAREST object that is [cardinal direction] of the [object_desc]?
+        </div>
+        <div class="example-box">
+          <strong>Type B2 (MDI):</strong> In which direction is the [object_desc] to the [cardinal direction] of the [object_desc], relative to the [object_desc] itself?
+        </div>
+      </div>
+      <div class="tax-item">
+        <h4>[MOVE] <span>Embodied Action Simulation</span></h4>
+        <p style="margin-bottom:15px; color:var(--text-secondary);">Challenges MLLMs to execute virtual movements and predict the visual consequences of these actions. It features <strong>Pure Translational Movement (PTM)</strong> and <strong>Rotation-Translational Movement (RTM)</strong>.</p>
+        <div class="example-box" style="margin-bottom: 10px;">
+          <strong>Type C1 (PTM):</strong> From the [object_desc], near the [object_desc], walk straight [cardinal direction] for [number] meters. What is the FIRST object you will encounter?
+        </div>
+        <div class="example-box">
+          <strong>Type C2 (RTM):</strong> From the [object_desc], walk [cardinal direction] [number] meters toward the [object_desc] area, then turn [angle] to face [cardinal direction]. Is the [object_desc] still visible from your new position and facing direction?
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Methodology -->
+  <section>
+    <div class="container">
+      <div class="section-title">Methodology Pipeline</div>
+      <p style="color: var(--text-secondary); margin-bottom: 40px;">OmniCoT translates 3D scene geometry into structured language representation, generates multidimensional candidate questions (See, Locate, Move), and applies rigorous dual-LLM reasoning judges to select high-quality QA pairs.</p>
+      <img src="assets/img/Genpipe.png" alt="Methodology Pipeline" class="teaser-img">
+      <p class="caption">Figure 2: The hybrid pipeline for automated generation and expert supervision of OmniCoT datasets.</p>
+    </div>
+  </section>
+
+  <!-- Leaderboard -->
+  <section>
+    <div class="container">
+      <div class="section-title">OmniCoT-B Leaderboard</div>
+      <p style="color: var(--text-secondary); margin-bottom: 30px;">Performance of SoTA MLLMs on the OmniCoT-B Benchmark, measuring both Accuracy (See/Locate/Move) and CoT Quality (Precision/Recall/F1/VC/SES/RF).</p>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">Model</th>
+              <th colspan="4" style="text-align: center;">Accuracy Evaluation</th>
+              <th colspan="6" style="text-align: center;">Chain-of-Thought Evaluation</th>
+            </tr>
+            <tr>
+              <th>See</th>
+              <th>Locate</th>
+              <th>Move</th>
+              <th>Overall</th>
+              <th>Pre.</th>
+              <th>Rec.</th>
+              <th>F1</th>
+              <th>VC</th>
+              <th>SES</th>
+              <th>RF</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #faf5f0; font-weight: 600; font-size: 0.8rem; color: var(--text-secondary);"><td colspan="11" style="text-align: center; padding: 8px;">Open-Source MLLMs</td></tr>
+            <tr>
+              <td>Qwen2.5-VL-3B-Instruct</td>
+              <td>34.27</td>
+              <td>17.15</td>
+              <td>31.43</td>
+              <td>26.90</td>
+              <td class="worst">26.17</td>
+              <td>18.23</td>
+              <td>21.49</td>
+              <td>36.85</td>
+              <td>23.36</td>
+              <td>39.82</td>
+            </tr>
+            <tr>
+              <td>Qwen2.5-VL-7B-Instruct</td>
+              <td>33.77</td>
+              <td>15.53</td>
+              <td>24.33</td>
+              <td>23.53</td>
+              <td>34.60</td>
+              <td>20.52</td>
+              <td>25.76</td>
+              <td>43.85</td>
+              <td>28.05</td>
+              <td>41.40</td>
+            </tr>
+            <tr>
+              <td>Qwen2.5-VL-32B-Instruct</td>
+              <td>47.84</td>
+              <td>21.93</td>
+              <td>31.99</td>
+              <td>32.39</td>
+              <td>42.05</td>
+              <td>27.39</td>
+              <td>33.17</td>
+              <td>57.33</td>
+              <td>31.97</td>
+              <td>49.18</td>
+            </tr>
+            <tr>
+              <td>Qwen2.5-VL-72B-Instruct</td>
+              <td>52.03</td>
+              <td>23.69</td>
+              <td>35.05</td>
+              <td>35.26</td>
+              <td>46.57</td>
+              <td>28.53</td>
+              <td>35.39</td>
+              <td>49.51</td>
+              <td>36.30</td>
+              <td>54.80</td>
+            </tr>
+            <tr>
+              <td>Qwen3-VL-8B-Instruct</td>
+              <td>41.52</td>
+              <td>18.73</td>
+              <td>26.59</td>
+              <td>27.56</td>
+              <td>61.22</td>
+              <td>29.48</td>
+              <td>39.80</td>
+              <td class="best">85.09</td>
+              <td class="best">79.05</td>
+              <td>63.49</td>
+            </tr>
+            <tr>
+              <td>LLaVA-OneVision-1.5-8B</td>
+              <td>42.40</td>
+              <td>14.61</td>
+              <td>29.95</td>
+              <td>27.51</td>
+              <td>36.99</td>
+              <td>19.53</td>
+              <td>25.56</td>
+              <td>49.88</td>
+              <td>21.84</td>
+              <td>44.43</td>
+            </tr>
+            <tr>
+              <td>LLaVA-v1.5-7B</td>
+              <td>15.00</td>
+              <td>9.82</td>
+              <td>16.80</td>
+              <td class="worst">13.76</td>
+              <td>30.56</td>
+              <td>12.93</td>
+              <td>20.04</td>
+              <td>37.66</td>
+              <td class="worst">14.72</td>
+              <td>43.76</td>
+            </tr>
+            <tr>
+              <td>LLaVA-v1.5-13B</td>
+              <td>21.01</td>
+              <td>14.17</td>
+              <td>11.71</td>
+              <td>15.02</td>
+              <td>40.88</td>
+              <td>16.60</td>
+              <td>23.62</td>
+              <td>35.70</td>
+              <td>14.93</td>
+              <td>42.76</td>
+            </tr>
+            <tr>
+              <td>LLaVA-v1.6-Mistral-7B</td>
+              <td>22.01</td>
+              <td>17.24</td>
+              <td class="worst">11.40</td>
+              <td>16.31</td>
+              <td>35.18</td>
+              <td>17.64</td>
+              <td>23.49</td>
+              <td>34.80</td>
+              <td>22.56</td>
+              <td>37.64</td>
+            </tr>
+            <tr>
+              <td>LLaVA-v1.6-Vicuna-7B</td>
+              <td class="worst">11.13</td>
+              <td>12.63</td>
+              <td>19.24</td>
+              <td>14.70</td>
+              <td>30.56</td>
+              <td class="worst">9.60</td>
+              <td class="worst">14.61</td>
+              <td class="worst">28.52</td>
+              <td>25.41</td>
+              <td class="worst">35.66</td>
+            </tr>
+            <tr>
+              <td>LLaVA-v1.6-Vicuna-13B</td>
+              <td>16.32</td>
+              <td>15.00</td>
+              <td>22.33</td>
+              <td>18.07</td>
+              <td>30.40</td>
+              <td>11.31</td>
+              <td>16.48</td>
+              <td>31.36</td>
+              <td>16.41</td>
+              <td>37.12</td>
+            </tr>
+            <tr>
+              <td>InternVL3.5-14B</td>
+              <td>41.77</td>
+              <td>20.35</td>
+              <td>31.64</td>
+              <td>30.11</td>
+              <td>40.54</td>
+              <td>27.99</td>
+              <td>33.11</td>
+              <td>46.94</td>
+              <td>36.18</td>
+              <td>49.61</td>
+            </tr>
+            
+            <tr style="background: #faf5f0; font-weight: 600; font-size: 0.8rem; color: var(--text-secondary);"><td colspan="11" style="text-align: center; padding: 8px;">Closed-Source MLLMs</td></tr>
+            <tr>
+              <td>ChatGPT-4o</td>
+              <td>51.97</td>
+              <td>15.18</td>
+              <td>33.65</td>
+              <td>31.58</td>
+              <td>42.46</td>
+              <td>25.51</td>
+              <td>31.87</td>
+              <td>62.99</td>
+              <td>42.03</td>
+              <td>51.41</td>
+            </tr>
+            <tr>
+              <td>GPT-5</td>
+              <td class="best">57.29</td>
+              <td class="best">24.40</td>
+              <td class="best">42.71</td>
+              <td class="best">39.72</td>
+              <td>51.43</td>
+              <td class="best">34.79</td>
+              <td class="best">41.51</td>
+              <td>63.05</td>
+              <td>57.30</td>
+              <td>57.10</td>
+            </tr>
+            <tr>
+              <td>Doubao-1.5-Vision-Pro</td>
+              <td>54.91</td>
+              <td>8.38</td>
+              <td>28.08</td>
+              <td>27.77</td>
+              <td>45.47</td>
+              <td>22.53</td>
+              <td>30.13</td>
+              <td>71.02</td>
+              <td>42.85</td>
+              <td>47.95</td>
+            </tr>
+            <tr>
+              <td>Doubao-1.8</td>
+              <td>57.09</td>
+              <td>23.87</td>
+              <td>41.14</td>
+              <td>38.90</td>
+              <td>42.56</td>
+              <td>29.92</td>
+              <td>35.13</td>
+              <td>66.29</td>
+              <td>49.94</td>
+              <td>55.79</td>
+            </tr>
+            <tr>
+              <td>Gemini3-Flash</td>
+              <td>47.52</td>
+              <td>14.17</td>
+              <td>29.29</td>
+              <td>28.43</td>
+              <td class="best">79.30</td>
+              <td>22.46</td>
+              <td>35.01</td>
+              <td>70.22</td>
+              <td>46.54</td>
+              <td class="best">68.73</td>
+            </tr>
+            <tr>
+              <td>GLM-4.5v</td>
+              <td>53.15</td>
+              <td>15.05</td>
+              <td>28.60</td>
+              <td>29.95</td>
+              <td>47.82</td>
+              <td>23.07</td>
+              <td>31.12</td>
+              <td>66.98</td>
+              <td>38.31</td>
+              <td>56.63</td>
+            </tr>
+            <tr>
+              <td>Step3</td>
+              <td>48.40</td>
+              <td>16.71</td>
+              <td>33.69</td>
+              <td>31.23</td>
+              <td>58.59</td>
+              <td>22.53</td>
+              <td>32.55</td>
+              <td>63.71</td>
+              <td>36.96</td>
+              <td>59.49</td>
+            </tr>
+            <tr>
+              <td>Grok-4</td>
+              <td>54.40</td>
+              <td>19.30</td>
+              <td>37.04</td>
+              <td>34.99</td>
+              <td>48.28</td>
+              <td>29.21</td>
+              <td>36.40</td>
+              <td>55.36</td>
+              <td>53.88</td>
+              <td>48.65</td>
+            </tr>
+            <tr>
+              <td>Qwen3-Max</td>
+              <td>52.03</td>
+              <td class="worst">6.19</td>
+              <td>12.97</td>
+              <td>20.58</td>
+              <td>43.88</td>
+              <td>22.03</td>
+              <td>29.33</td>
+              <td>72.76</td>
+              <td>38.39</td>
+              <td>57.48</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- OmniCoT-R1 -->
+  <section class="container">
+    <div class="section-title">Training Strategy & Results (OmniCoT-R1)</div>
+    <div style="max-width: 900px; margin: 0 auto;">
+      <h3 style="margin-bottom:20px; font-size: 1.5rem;">SFT + GRPO</h3>
+      <p style="color:var(--text-secondary); margin-bottom: 30px; font-size: 1.1rem; line-height: 1.8;">Building upon OmniCoT-T, we develop OmniCoT-R1 via a two-stage strategy. Supervised Fine-tuning (SFT) first anchors reasoning to panoramic evidence (e.g., bearings, proximity). Initialized from this SFT checkpoint, Group Relative Policy Optimization (GRPO) then penalizes geometrically incoherent paths to consolidate global 360° spatial consistency.</p>
+      
+      <div class="table-container" style="margin-bottom: 50px;">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">Model</th>
+              <th colspan="4" style="text-align: center;">Accuracy Evaluation</th>
+              <th colspan="6" style="text-align: center;">Chain-of-Thought Evaluation</th>
+            </tr>
+            <tr>
+              <th>See</th>
+              <th>Locate</th>
+              <th>Move</th>
+              <th>Overall</th>
+              <th>Pre.</th>
+              <th>Rec.</th>
+              <th>F1</th>
+              <th>VC</th>
+              <th>SES</th>
+              <th>RF</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Qwen2.5-VL-7B-Instruct</td>
+              <td>33.77</td>
+              <td>15.53</td>
+              <td>24.33</td>
+              <td>23.53</td>
+              <td>34.60</td>
+              <td>20.52</td>
+              <td>25.76</td>
+              <td>43.85</td>
+              <td>28.05</td>
+              <td>41.40</td>
+            </tr>
+            <tr style="background: #faf8f5;">
+              <td>OmniCoT-R1 (SFT)</td>
+              <td>59.41</td>
+              <td>39.44</td>
+              <td>52.06</td>
+              <td>49.31</td>
+              <td>42.89</td>
+              <td>34.22</td>
+              <td>38.07</td>
+              <td>46.25</td>
+              <td>57.87</td>
+              <td>53.93</td>
+            </tr>
+            <tr style="background-color: #fff4ea;">
+              <td><strong>OmniCoT-R1 (SFT+GRPO)</strong></td>
+              <td class="best">67.97</td>
+              <td class="best">51.82</td>
+              <td class="best">61.34</td>
+              <td class="best">59.54</td>
+              <td class="best">55.81</td>
+              <td class="best">47.19</td>
+              <td class="best">51.14</td>
+              <td class="best">59.20</td>
+              <td class="best">66.64</td>
+              <td class="best">63.21</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Insights -->
+  <section>
+    <div class="container">
+      <div class="section-title">Key Insights & Analysis</div>
+      <div style="max-width: 900px; margin: 0 auto;">
+        
+        <div style="margin-bottom: 50px;">
+          <h3 style="margin-bottom:15px; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);">1. Divergent Impact of CoT on MLLMs</h3>
+          <p style="color:var(--text-secondary); margin-bottom: 25px; font-size: 1.1rem; line-height: 1.8;">For open-source models, CoT acts as an effective panoramic spatial navigator. As shown in the table below, forcing models to "think" (w/ CoT) generally improves their overall reasoning ability compared to direct answering (w/o CoT). Conversely, forcing CoT on closed-source models (e.g., Gemini3-Flash) actively degrades their accuracy. The verbose generation of long reasoning steps inherently carries a risk of cumulative hallucination, which currently outweighs the logical benefits of CoT for top-tier closed-source models. We also observe a paradoxical "Reasoning-Answer Mismatch" or "linguistic blind-navigation", revealing that their internal reasoning process is often driven by text priors rather than true cross-modal spatial perception.</p>
+          
+          <div class="table-container" style="max-width: 600px; margin: 0 auto; box-shadow: none;">
+            <table style="font-size: 0.85rem;">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th style="text-align: center;">w/o CoT</th>
+                  <th style="text-align: center;">w/ CoT</th>
+                  <th style="text-align: center;">&Delta;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background: #faf5f0; font-weight: 600; color: var(--text-secondary);"><td colspan="4" style="text-align: center; padding: 6px;">Open-Source MLLMs</td></tr>
+                <tr><td>Qwen3-VL-8B-Instruct</td><td style="text-align: center;">25.39</td><td style="text-align: center; font-weight: bold;">27.56</td><td style="text-align: center; color: #dc2626;">+2.17</td></tr>
+                <tr><td>Qwen2.5-VL-72B-Instruct</td><td style="text-align: center;">26.51</td><td style="text-align: center; font-weight: bold;">35.26</td><td style="text-align: center; color: #dc2626;">+8.75</td></tr>
+                <tr><td>InternVL3.5-14B</td><td style="text-align: center;">23.79</td><td style="text-align: center; font-weight: bold;">30.11</td><td style="text-align: center; color: #dc2626;">+6.32</td></tr>
+                <tr><td>LLaVA-v1.5-7B</td><td style="text-align: center;">4.91</td><td style="text-align: center; font-weight: bold;">13.77</td><td style="text-align: center; color: #dc2626;">+8.86</td></tr>
+                
+                <tr style="background: #faf5f0; font-weight: 600; color: var(--text-secondary);"><td colspan="4" style="text-align: center; padding: 6px;">Close-Source / API MLLMs</td></tr>
+                <tr><td>Qwen3-Max</td><td style="text-align: center;">25.39</td><td style="text-align: center; font-weight: bold;">20.58</td><td style="text-align: center; color: #2563eb;">-4.81</td></tr>
+                <tr><td>GPT-5</td><td style="text-align: center;">42.66</td><td style="text-align: center; font-weight: bold;">39.72</td><td style="text-align: center; color: #2563eb;">-2.94</td></tr>
+                <tr><td>Doubao-1.5-Vision-Pro</td><td style="text-align: center;">30.96</td><td style="text-align: center; font-weight: bold;">27.76</td><td style="text-align: center; color: #2563eb;">-3.20</td></tr>
+                <tr><td>Gemini3-Flash</td><td style="text-align: center;">39.97</td><td style="text-align: center; font-weight: bold;">28.44</td><td style="text-align: center; color: #2563eb;">-11.53</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 50px;">
+          <h3 style="margin-bottom:15px; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);">2. The Impact of Spatial Anchor Density</h3>
+          <p style="color:var(--text-secondary); margin-bottom: 25px; font-size: 1.1rem; line-height: 1.8;">Increasing the number of spatial anchors yields a "precision dividend" across most MLLMs. These reference points serve as global coordinate "pins" that mitigate spatial drift. Providing even a few anchors significantly activates the latent spatial reasoning capabilities of top-tier models like GPT-5.</p>
+          <img src="assets/img/Radar.png" alt="Capability Expansion via Spatial Anchors" class="teaser-img">
+        </div>
+
+        <div style="margin-bottom: 50px;">
+          <h3 style="margin-bottom:15px; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);">3. Scaling vs. Bottlenecks</h3>
+          <p style="color:var(--text-secondary); margin-bottom: 25px; font-size: 1.1rem; line-height: 1.8;">While increasing parameter count broadens MLLM capabilities for panoramas, simple scaling eventually hits a plateau. The performance leap from 7B to 32B is substantial, yet the push to 72B yields only minor gains. Explicitly optimizing spatial reasoning via post-training is a more promising path forward.</p>
+          <img src="assets/img/QwenSca.png" alt="Scaling Analysis" class="teaser-img" style="max-width: 600px;">
+        </div>
+
+        <div>
+          <h3 style="margin-bottom:15px; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text);">4. Sim-to-Real Gap</h3>
+          <p style="color:var(--text-secondary); margin-bottom: 25px; font-size: 1.1rem; line-height: 1.8;">Transitioning from synthetic to real-world panoramas exposes a substantial performance gap. Models struggle with fine-grained relationship reasoning amidst authentic lens distortion and object occlusion, emphasizing the indispensable role of real-world panoramic data.</p>
+          <img src="assets/img/Gap.png" alt="Sim-to-Real Gap" class="teaser-img">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BibTeX -->
+  <section class="container" id="bibtex">
+    <div class="section-title">BibTeX</div>
+    <pre>@article{he2026omnicot,
+  title={OmniCoT: A Benchmark for Global and Multi-Step Panoramic Reasoning},
+  author={He, Haocong and Liao, Chenfei and Wen, Zichen and Dongfang, Zihao and Zheng, Xu and Ren, Bin and Su, Chang and Zhang, Zixin and Chen, Harold Haodong and Zhang, Hongfei and Li, Weijia and Yang, Kailun and He, Conghui and Hu, Xuming and Sebe, Nicu and Zhang, Linfeng},
+  journal={arXiv preprint},
+  year={2026}
+}</pre>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <p>OMNICOT TEAM &copy; 2026</p>
+    <p style="margin-top: 10px; opacity: 0.6;">ALL RIGHTS RESERVED</p>
+  </div>
+</footer>
+
+</body>
+</html>
